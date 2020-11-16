@@ -1,16 +1,15 @@
 __author__ = "Tin Dang"
 __copyright__ = "Copyright (C) 2020 DPS"
-__license__ = "Public Domain"
 __version__ = "1.0"
 __doc__ = "Options base on property which help build dict name=value with value filter."
 __all__ = [
-    'Options', 'Option', 'option', 'readonly_option',
-    'InterruptedSetOption', 'UnsetOption'
+    'Options', 'Option', 'option', 'readonly_option', 'clone_options',
+    'InterruptedSetOption', 'UnsetOption',
+    "__doc__", "__version__", "__copyright__", "__author__"
 ]
+
 import inspect
 from typing import Optional, Union, Callable, Any, Sequence, Tuple
-from .attrdict import AttrDict
-
 
 SETFUNC_OPTION_TYPE = (bool, type(None), staticmethod, classmethod)
 
@@ -138,8 +137,9 @@ class Option(property):
         return self.__set_filter
 
 
-class OptionsBase:
+class OptionsBase(object):
     """OptionBase with full feature set, get, del. Which contain all option name=value in dict"""
+
     def __init__(self, options: Optional['OptionsBase'] = None):
         """
         Create Option pool contains many Option in attribute class.
@@ -147,7 +147,7 @@ class OptionsBase:
         Args:
             options:
         """
-        self.__opts = AttrDict()
+        self.__opts = dict()
 
         if options is not None:
             self.from_options(options)
@@ -227,6 +227,21 @@ class OptionsBase:
             raise UnsetOption(name, self.__class__)
         self.__opts.__delitem__(name)
 
+    def add_opt(self, name: str, opt: Option):
+        """
+        Add attribute option
+
+        Args:
+            name:
+            opt:
+
+        Returns:
+
+        """
+        if not isinstance(opt, Option):
+            raise TypeError("Only support Option type.")
+        setattr(self.__class__, name, opt)
+
     def find_option(self, opt: Option) -> Optional[str]:
         """
         Find option with Option.
@@ -247,10 +262,10 @@ class OptionsBase:
             if _opt.name == opt.name:
                 return _attr
         return None
-    
+
     def get_value(self, opt: Option) -> Any:
         return self.__getattribute__(self.find_option(opt))
-    
+
     def is_set(self, name: Union[str, Option]) -> bool:
         """
         Option had set.
@@ -266,7 +281,7 @@ class OptionsBase:
         """
         if not isinstance(name, (str, Option)):
             raise TypeError("name params must be `str` or `Option`.")
-        
+
         if isinstance(name, Option):
             name = name.name
         return self.__opts.__contains__(name)
@@ -347,6 +362,7 @@ class Options(OptionsBase, metaclass=OptionType):
     """
     Option Container without get, set and del attributes.
     """
+
     def fget(self, *args, **kwargs):
         raise AttributeError
 
@@ -390,3 +406,20 @@ def readonly_option(name,
             doc: docstring
     """
     return option(name, False, default_value, doc)
+
+
+def clone_options(opts: Union[Options, OptionType], clss_name: Optional[str] = None):
+    if isinstance(opts, Options):
+        opts = type(opts)
+
+    if not isinstance(opts, OptionType):
+        raise TypeError(f"options must be OptionType.")
+
+    if clss_name is None:
+        name = str(opts.__name__)
+    else:
+        name = str(clss_name)
+
+    _dict = opts.__dict__.copy()
+    _bases = tuple(opts.__bases__)
+    return OptionType(name, _bases, _dict)()
