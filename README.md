@@ -58,3 +58,10 @@ Example:
 
     >>> print(conf.build())
     {'url': '127.0.0.1:9090'}
+
+
+### Info
+Author = "Tin Dang"  
+Copyright = "Copyright (C) 2020 DPS"  
+Version = "1.0"  
+Doc = "Options base on property which help build dict name=value with value filter."
