@@ -9,6 +9,7 @@ __all__ = [
 ]
 
 import inspect
+from copy import deepcopy
 from typing import Optional, Union, Callable, Any, Sequence, Tuple
 
 SETFUNC_OPTION_TYPE = (bool, type(None), staticmethod, classmethod)
@@ -56,7 +57,7 @@ class Option(property):
         Args:
             name: Key of option. Auto fill if not set.
             set_filter: Filter value before set.
-            default_value: Default value of option. It isn't filtered by filter.
+            default_value: Default value of option.
             doc: docstring
         """
         self.__name = name
@@ -100,13 +101,18 @@ class Option(property):
             return OptionsBase.fset(_self, self.__name, value)
 
         def _wrap_getter(_self):
-            return OptionsBase.fget(_self, self.__name)
+            try:
+                return OptionsBase.fget(_self, self.__name)
+            except UnsetOption as e:
+                if self.__default_value is not None:
+                    _wrap_setter(_self, deepcopy(self.__default_value))
+                    return OptionsBase.fget(_self, self.__name)
+                raise e
 
         def _wrap_deleter(_self):
             if self.__default_value is not None:
-                return OptionsBase.fset(_self, self.__name, self.__default_value)
+                _wrap_setter(_self, deepcopy(self.__default_value))
             return OptionsBase.fdelete(_self, self.__name)
-
         super().__init__(_wrap_getter, _wrap_setter, _wrap_deleter)
 
     def __repr__(self):
@@ -155,7 +161,7 @@ class OptionsBase(object):
         name_opts = set()
         for name, opt in self.options():
             if opt.default_value is not None:
-                self.__opts[opt.name] = opt.default_value
+                setattr(self, name, deepcopy(opt.default_value))
 
             if opt.name in name_opts:
                 raise DuplicateOptionName(f"Duplicate option's name: `{opt.name}` at {name} option")
@@ -166,11 +172,11 @@ class OptionsBase(object):
         _repr = list()
         for attr, opt in self.options():
             # attribute name
-            _repr.append(f'\n\t- {attr:15}')
+            _repr.append(f'\n\t-> {attr:12}')
 
             # option name + value
             try:
-                v = self.__getattribute__(attr)
+                v = getattr(self, attr)
                 if isinstance(v, OptionsBase):
                     _repr.append(v.__class__.__name__)
                     if v:
@@ -178,18 +184,19 @@ class OptionsBase(object):
                     else:
                         _repr.append(f"({None})")
                 else:
-                    if isinstance(v, str):
-                        v = f'"{v}"'
+                    if not isinstance(v, (int, float)):
+                        v = f"'{v}'"
             except UnsetOption:
-                v = "Unset"
+                v = "[UNSET]"
 
-            v = f'| "{opt.name}" = {v}'
+            v = f'| -{opt.name} {v}'
             _repr.append(f"{v:30}")
 
             # doc
             if opt.doc:
-                _repr.append(f' | Doc: {opt.doc}')
-        return f"{self.__class__.__name__}: {''.join(_repr)}\n"
+                _repr.append(f' | {opt.doc}')
+        return f"{self.__class__.__name__.upper()}" \
+               f"{''.join(_repr)}\n"
 
     def __str__(self):
         return self.__opts.__str__()
