@@ -63,7 +63,7 @@ Config:
 ```
 
 #### Credit
-Author: Tin Dang  
-Copyright: Copyright (C) 2020 DPS  
-Version: 1.0
-Doc: Options base on property which help build dict name=value with value filter.
+- Author: Tin Dang  
+- Copyright: Copyright (C) 2020 DPS  
+- Version: 1.0
+- Doc: Options base on property which help build dict name=value with value filter.
