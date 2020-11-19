@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name='python-options',
-    version='1.0.0-3',
+    version='1.0.0-4',
     packages=find_packages(),
     url='https://github.com/TinDang97/python-options',
     license='LICENSE',

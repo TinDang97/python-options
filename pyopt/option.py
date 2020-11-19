@@ -380,14 +380,17 @@ class Options(OptionsBase, metaclass=OptionType):
         raise AttributeError
 
 
-def option(name: str,
+def option(opt: str,
            set_filter: Union[Callable[[Any], Any], bool, None] = None,
            default_value: Optional[Any] = None,
            doc: Optional[str] = None) -> Option:
-    """Option decorator
+    """
+    Option declarer.
+
+    Support change option's config.
 
     Args:
-        name: Key of option. Auto fill if not set.
+        opt: Key of option. Auto fill if not set.
         set_filter: Filter value before set.
         default_value: Default value of option. It isn't filtered by filter.
         doc: docstring
@@ -397,9 +400,18 @@ def option(name: str,
             test = option("test")
 
     """
-    if isinstance(name, Option):
-        name = name.name
-    return Option(name, set_filter=set_filter, default_value=default_value, doc=doc)
+    if isinstance(opt, Option):
+        if set_filter is None:
+            set_filter = opt.set_filter
+
+        if default_value is None:
+            default_value = opt.default_value
+
+        if doc is None:
+            doc = opt.doc
+
+        opt = opt.name
+    return Option(opt, set_filter=set_filter, default_value=default_value, doc=doc)
 
 
 def readonly_option(name,
