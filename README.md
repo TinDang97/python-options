@@ -4,6 +4,11 @@ Make python class with option base on property. Using build option for client li
 
 Support: Python 3.6+
 
+#### Setup
+```bash
+pip install python-options
+```
+
 #### Feature: 
 - Build options (config) easily. 
 - Clone option (changing not effect with other config which initial from single class)
